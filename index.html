@@ -551,12 +551,44 @@
         });
 
         function initMap() {
-            map = L.map('map').setView([33.7490, -84.3880], 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(map);
+    // 1. Center the map on your exact neighborhood coordinates
+    const neighborhoodCenter = [33.76743360359622, -84.33311924392298];
+    
+    map = L.map('map').setView(neighborhoodCenter, 14);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
 
-            markersLayer = L.layerGroup().addTo(map);
+    // 2. Add a beautiful 1-mile tracking radius circle (1 mile = 1609.34 meters)
+    L.circle(neighborhoodCenter, {
+        color: '#00A896',       // Matching your app's teal color
+        fillColor: '#00A896',
+        fillOpacity: 0.15,
+        radius: 1609.34,        // 1 mile in meters
+        weight: 3,
+        dashArray: '6, 6'       // Gives it a clean dashed border look
+    }).addTo(map);
+
+    markersLayer = L.layerGroup().addTo(map);
+
+    map.on('click', (e) => {
+        if (activeSightingMode) {
+            openUpdateSightingForm(temporarySightingCatId, e.latlng.lat, e.latlng.lng);
+            activeSightingMode = false;
+            temporarySightingCatId = null;
+        } else {
+            openNewCatForm(e.latlng.lat, e.latlng.lng);
+        }
+    });
+
+    // Automatically fit the map view snugly around your 1-mile circle bounds
+    setTimeout(() => {
+        map.invalidateSize();
+        const boundaryCircle = L.circle(neighborhoodCenter, { radius: 1609.34 });
+        map.fitBounds(boundaryCircle.getBounds());
+    }, 500);
+}
 
             map.on('click', (e) => {
                 if (activeSightingMode) {
