@@ -181,7 +181,27 @@ const firebaseConfig = {
                     console.error("Uh oh, something went wrong:", error);
                 });
         }
+// --- CLOUD READER: LOAD CATS ONTO THE MAP ---
+        // This tells the app to listen to the "cats" folder in the cloud
+        database.ref('cats').on('child_added', function(snapshot) {
+            // Grab the data for this specific cat
+            let catData = snapshot.val(); 
 
+            // 1. Draw a pin on the map using the saved coordinates
+            let marker = L.marker([catData.lat, catData.lng]).addTo(map);
+
+            // 2. Build the popup bubble using the secret photo code!
+            let popupHTML = `
+                <div style="text-align: center; font-family: 'Fredoka', sans-serif;">
+                    <h3 style="margin: 0 0 5px 0; color: #00A896;">${catData.name}</h3>
+                    <img src="${catData.photo}" style="width: 150px; border-radius: 8px; border: 2px solid #2F3E46;">
+                    <p style="margin: 5px 0 0 0;">${catData.notes}</p>
+                </div>
+            `;
+
+            // 3. Attach the bubble to the pin
+            marker.bindPopup(popupHTML);
+        });
         // --- THE SHRINK-RAY CODE ---
         document.getElementById('cat-photo').addEventListener('change', function(e) {
             const file = e.target.files[0];
