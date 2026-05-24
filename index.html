@@ -79,14 +79,14 @@
             box-shadow: 0 2px 0 var(--dark);
         }
 
-        /* --- NEW MODAL STYLES --- */
+        /* Modal Styles */
         .hidden { display: none !important; }
 
         #modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(47, 62, 70, 0.7);
-            z-index: 1500; /* Above the map and FAB */
+            z-index: 1500; 
         }
 
         #add-cat-modal {
@@ -99,7 +99,7 @@
             border-radius: 15px;
             width: 90%;
             max-width: 400px;
-            z-index: 2000; /* Topmost layer */
+            z-index: 2000; 
             box-shadow: 0 8px 0 var(--dark);
             display: flex;
             flex-direction: column;
@@ -184,6 +184,8 @@
         
         <div class="form-group">
             <input type="file" id="cat-photo" accept="image/*">
+            
+            <input type="hidden" id="photoData">
         </div>
         
         <div class="modal-buttons">
@@ -202,8 +204,7 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // --- NEW MODAL JAVASCRIPT ---
-        
+        // Map Functions
         function openModal() {
             document.getElementById('modal-overlay').classList.remove('hidden');
             document.getElementById('add-cat-modal').classList.remove('hidden');
@@ -217,61 +218,49 @@
             document.getElementById('cat-name').value = '';
             document.getElementById('cat-notes').value = '';
             document.getElementById('cat-photo').value = '';
+            document.getElementById('photoData').value = ''; // clear the secret box too!
         }
 
         function saveDummyCat() {
-            // 1. Get the name they typed (or default to Mystery Cat)
             let catName = document.getElementById('cat-name').value || 'Mystery Cat';
-            
-            // 2. Find exactly where the map is currently looking
             let currentCenter = map.getCenter();
             
-            // 3. Drop a local marker there (disappears when you refresh, but proves UI works)
             L.marker([currentCenter.lat, currentCenter.lng]).addTo(map)
                 .bindPopup(`<b style='font-family: Fredoka'>${catName}</b><br>Meow!`)
                 .openPopup();
                 
-            // 4. Close the modal
             closeModal();
         }
 
-        // Add this to your script section
-document.getElementById('cat-photo').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+        // --- THE SHRINK-RAY CODE ---
+        // This listens for when you upload a photo
+        document.getElementById('cat-photo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            const max_size = 280; 
-            
-            // Maintain aspect ratio
-            if (width > height) {
-                if (width > max_size) { height *= max_size / width; width = max_size; }
-            } else {
-                if (height > max_size) { width *= max_size / height; height = max_size; }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // This compresses the image to a JPEG string
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.5); 
-            
-            // Store it in a hidden input so we can grab it later when saving to Firebase
-            // Make sure to add <input type="hidden" id="photoData"> in your modal HTML
-            document.getElementById('photoData').value = dataUrl;
-        }
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-});
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 280; 
+                    canvas.height = (img.height / img.width) * 280;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.5); 
+                    
+                    // Put the code into the secret box
+                    document.getElementById('photoData').value = dataUrl;
+                    
+                    // High-five message!
+                    console.log("Success! Photo is resized and stored in the secret box.");
+                }
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
     </script>
 </body>
 </html>
