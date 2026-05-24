@@ -541,7 +541,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             initMap();
             
-            // Listen to real-time changes directly via Firebase database socket channels
+            // Listen to real-time changes
             onValue(catsRef, (snapshot) => {
                 const data = snapshot.val();
                 globalDatabaseObjects = data || {};
@@ -570,7 +570,7 @@
 
             setTimeout(() => {
                 map.invalidateSize();
-            }, 300);
+            }, 500);
         }
 
         function renderMapPins() {
@@ -622,6 +622,7 @@
 
             catIds.forEach(catId => {
                 const cat = globalDatabaseObjects[catId];
+                if (!cat.history) return;
                 const historyArray = Object.values(cat.history);
                 const latest = historyArray[historyArray.length - 1];
 
@@ -660,38 +661,43 @@
             const friendliness = parseInt(document.getElementById('ratingFriendliness').value);
             const description = document.getElementById('formDescription').value;
             const notes = document.getElementById('formNotes').value;
-            const photo = document.getElementById('photoData').value;
+            const photo = document.getElementById('photoData').value || "";
             const timestamp = new Date().toISOString();
 
             const sightingData = { timestamp, username, lat, lng, environment, cuteness, friendliness, notes, photo };
 
-            if (catId) {
-                const targetHistoryRef = push(ref(db, `cats/${catId}/history`));
-                await set(targetHistoryRef, sightingData);
-            } else {
-                const newCatRef = push(catsRef);
-                const newCatId = newCatRef.key;
-                
-                const newCatData = {
-                    id: newCatId,
-                    name: document.getElementById('formName').value || 'Unknown',
-                    color,
-                    size,
-                    description,
-                    history: {}
-                };
-                
-                await set(newCatRef, newCatData);
-                const initialSightingRef = push(ref(db, `cats/${newCatId}/history`));
-                await set(initialSightingRef, sightingData);
+            try {
+                if (catId) {
+                    // Safe update pattern for clean appends
+                    const targetHistoryRef = ref(db, `cats/${catId}/history`);
+                    const newSightingRef = push(targetHistoryRef);
+                    await set(newSightingRef, sightingData);
+                } else {
+                    const newCatRef = push(catsRef);
+                    const newCatId = newCatRef.key;
+                    
+                    const newCatData = {
+                        id: newCatId,
+                        name: document.getElementById('formName').value || 'Unknown',
+                        color,
+                        size,
+                        description
+                    };
+                    
+                    await set(ref(db, `cats/${newCatId}`), newCatData);
+                    const initialSightingRef = push(ref(db, `cats/${newCatId}/history`));
+                    await set(initialSightingRef, sightingData);
+                }
+                closeModal('formModal');
+            } catch (error) {
+                console.error("Firebase save operation failed:", error);
+                alert("Could not post sighting. Please double check that Database rules allow read/write access!");
             }
-
-            closeModal('formModal');
         });
 
         function viewCatProfile(catId) {
             const cat = globalDatabaseObjects[catId];
-            if (!cat) return;
+            if (!cat || !cat.history) return;
 
             const historyArray = Object.values(cat.history);
             const latest = historyArray[historyArray.length - 1];
@@ -775,7 +781,7 @@
             openModal('formModal');
         };
 
-        // Exposing global actions securely out of the modular sandbox
+        // Expose functions globally
         window.openModal = function(id) { document.getElementById(id).classList.add('active'); };
         window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
         window.selectSwatch = function(element, hex) {
@@ -805,36 +811,3 @@
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    const max_size = 280; 
-                    if (width > height) {
-                        if (width > max_size) { height *= max_size / width; width = max_size; }
-                    } else {
-                        if (height > max_size) { width *= max_size / height; height = max_size; }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.5); 
-                    document.getElementById('photoData').value = dataUrl;
-                }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-        };
-        window.viewCatProfile = viewCatProfile;
-
-        function getContrastYIQ(hexcolor){
-            hexcolor = hexcolor.replace("#", "");
-            if(hexcolor.length === 3) {
-                hexcolor = hexcolor[0]+hexcolor[0]+hexcolor[1]+hexcolor[1]+hexcolor[2]+hexcolor[2];
-            }
-            const r = parseInt(hexcolor.substr(0,2),16);
-            const g = parseInt(hexcolor.substr(2,2),16);
-            const b = parseInt(hexcolor.substr(4,2),16);
-            const yiq = ((r*299)+(g*587)+(b*114))/1000;
-            return (yiq >= 128) ? '#2F3E46' : '#FFFFFF';
-        }
-    </script>
-</body>
-</html>
