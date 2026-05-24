@@ -3,42 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map Test</title>
+    <title>Geo-Catter — Neighborhood Cat Tracker</title>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* Force the page and map to take up the exact full screen */
-        body, html {
+        /* Your custom Geo-Catter variables */
+        :root {
+            --coral: #FF6B6B;
+            --teal: #00A896;
+            --amber: #F9A620;
+            --dark: #2F3E46;
+            --light: #F4F7F6;
+            --white: #FFFFFF;
+            --border-thick: 3px solid var(--dark);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
             margin: 0;
             padding: 0;
-            height: 100%;
-            background-color: #e0edd4; /* Your green fallback color */
+            font-family: 'Fredoka', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Keeps app full screen */
         }
+
+        /* Top Header */
+        header {
+            background-color: var(--teal);
+            color: var(--white);
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: var(--border-thick);
+            z-index: 1000; /* Keeps header above map tiles */
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+
+        /* Map Container takes up remaining space */
+        #map-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
         #map {
-            height: 100vh;
-            width: 100vw;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Floating Action Button (FAB) */
+        .add-cat-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--coral);
+            color: var(--dark);
+            border: var(--border-thick);
+            border-radius: 50%;
+            width: 65px;
+            height: 65px;
+            font-size: 2.5rem;
+            font-family: 'Fredoka', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000; /* Critical: Must be > 400 to float over Leaflet map */
+            box-shadow: 0 6px 0 var(--dark);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .add-cat-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 var(--dark);
         }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <header>
+        <h1>Geo-Catter 🐾</h1>
+    </header>
+
+    <div id="map-container">
+        <div id="map"></div>
+        
+        <button class="add-cat-btn" onclick="alert('Form goes here!')">+</button>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // 1. Initialize the map centered on your exact coordinates
-        var map = L.map('map').setView([33.767433, -84.333119], 15);
+        // Initialize map centered on your coordinates
+        var map = L.map('map', {
+            zoomControl: false // We can add this back later, hiding it for a cleaner UI right now
+        }).setView([33.767433, -84.333119], 15);
 
-        // 2. Pull in the visual map tiles from OpenStreetMap
+        // OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 3. Drop a single test pin in the center so we know scripts are running
+        // Add dummy cat marker
         L.marker([33.767433, -84.333119]).addTo(map)
-            .bindPopup("<b>Success!</b><br>Leaflet is rendering perfectly.")
+            .bindPopup("<b style='font-family: Fredoka'>Test Cat</b><br>I live in the new UI shell.")
             .openPopup();
     </script>
 </body>
