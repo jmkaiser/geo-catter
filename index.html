@@ -230,8 +230,37 @@ const firebaseConfig = {
             };
             reader.readAsDataURL(file);
         });
+// ... your existing code (like saveCatToDatabase, etc.) is up here ...
+
+        // ==========================================
+        // PASTE STEP 2 RIGHT HERE:
+        // ==========================================
+        function locateUser() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    let userLat = position.coords.latitude;
+                    let userLng = position.coords.longitude;
+                    
+                    map.flyTo([userLat, userLng], 17, {
+                        animate: true,
+                        duration: 1.5
+                    });
+                    
+                    L.marker([userLat, userLng]).addTo(map)
+                        .bindPopup("<b style='font-family: Fredoka'>📍 You are here!</b>")
+                        .openPopup();
+                        
+                }, function(error) {
+                    console.error("Geolocation failed:", error);
+                    alert("Couldn't find your location. Make sure you allowed location permissions!");
+                });
+            } else {
+                alert("Your browser doesn't support geolocation.");
+            }
+        }
+        // ==========================================
 
     </script>
 </body>
 </html>
-</html>
+   
