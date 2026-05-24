@@ -551,44 +551,24 @@
         });
 
         function initMap() {
-    // 1. Center the map on your exact neighborhood coordinates
-    const neighborhoodCenter = [33.76743360359622, -84.33311924392298];
-    
-    map = L.map('map').setView(neighborhoodCenter, 14);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+            const neighborhoodCenter = [33.76743360359622, -84.33311924392298];
+            
+            map = L.map('map').setView(neighborhoodCenter, 14);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
 
-    // 2. Add a beautiful 1-mile tracking radius circle (1 mile = 1609.34 meters)
-    L.circle(neighborhoodCenter, {
-        color: '#00A896',       // Matching your app's teal color
-        fillColor: '#00A896',
-        fillOpacity: 0.15,
-        radius: 1609.34,        // 1 mile in meters
-        weight: 3,
-        dashArray: '6, 6'       // Gives it a clean dashed border look
-    }).addTo(map);
+            L.circle(neighborhoodCenter, {
+                color: '#00A896',
+                fillColor: '#00A896',
+                fillOpacity: 0.15,
+                radius: 1609.34,
+                weight: 3,
+                dashArray: '6, 6'
+            }).addTo(map);
 
-    markersLayer = L.layerGroup().addTo(map);
-
-    map.on('click', (e) => {
-        if (activeSightingMode) {
-            openUpdateSightingForm(temporarySightingCatId, e.latlng.lat, e.latlng.lng);
-            activeSightingMode = false;
-            temporarySightingCatId = null;
-        } else {
-            openNewCatForm(e.latlng.lat, e.latlng.lng);
-        }
-    });
-
-    // Automatically fit the map view snugly around your 1-mile circle bounds
-    setTimeout(() => {
-        map.invalidateSize();
-        const boundaryCircle = L.circle(neighborhoodCenter, { radius: 1609.34 });
-        map.fitBounds(boundaryCircle.getBounds());
-    }, 500);
-}
+            markersLayer = L.layerGroup().addTo(map);
 
             map.on('click', (e) => {
                 if (activeSightingMode) {
@@ -602,6 +582,8 @@
 
             setTimeout(() => {
                 map.invalidateSize();
+                const boundaryCircle = L.circle(neighborhoodCenter, { radius: 1609.34 });
+                map.fitBounds(boundaryCircle.getBounds());
             }, 500);
         }
 
@@ -870,7 +852,7 @@
             const g = parseInt(hexcolor.substr(2,2),16);
             const b = parseInt(hexcolor.substr(4,2),16);
             const yiq = ((r*299)+(g*587)+(b*114))/1000;
-            return (yiq >= 128) ? '#2F3E46' : '#FFFFFF';
+            return (yiq >= 128) ? 'black' : 'white';
         }
     </script>
 </body>
