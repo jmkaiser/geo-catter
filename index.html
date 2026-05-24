@@ -633,8 +633,7 @@
                     viewCatProfile(catId);
                 };
 
-                // REPLACE IT WITH THIS CLEAN LINE:
-const thumbSrc = latest.photo || "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E";
+                const thumbSrc = latest.photo || "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3C/svg%3E";
 
                 item.innerHTML = `
                     <img class="cat-item-thumb" src="${thumbSrc}" alt="thumb">
@@ -669,7 +668,6 @@ const thumbSrc = latest.photo || "data:image/svg+xml;utf8,%3Csvg xmlns='http://w
 
             try {
                 if (catId) {
-                    // Safe update pattern for clean appends
                     const targetHistoryRef = ref(db, `cats/${catId}/history`);
                     const newSightingRef = push(targetHistoryRef);
                     await set(newSightingRef, sightingData);
