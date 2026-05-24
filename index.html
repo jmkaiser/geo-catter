@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* Your custom Geo-Catter variables */
         :root {
             --coral: #FF6B6B;
             --teal: #00A896;
@@ -32,37 +31,28 @@
             color: var(--dark);
             display: flex;
             flex-direction: column;
-            height: 100vh; /* Keeps app full screen */
+            height: 100vh;
         }
 
-        /* Top Header */
         header {
             background-color: var(--teal);
             color: var(--white);
             padding: 15px 20px;
             text-align: center;
             border-bottom: var(--border-thick);
-            z-index: 1000; /* Keeps header above map tiles */
+            z-index: 1000;
         }
 
-        h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            letter-spacing: 1px;
-        }
+        h1 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
 
-        /* Map Container takes up remaining space */
         #map-container {
             flex-grow: 1;
             position: relative;
         }
 
-        #map {
-            width: 100%;
-            height: 100%;
-        }
+        #map { width: 100%; height: 100%; }
 
-        /* Floating Action Button (FAB) */
+        /* Floating Action Button */
         .add-cat-btn {
             position: absolute;
             bottom: 30px;
@@ -79,7 +69,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            z-index: 1000; /* Critical: Must be > 400 to float over Leaflet map */
+            z-index: 1000;
             box-shadow: 0 6px 0 var(--dark);
             transition: transform 0.1s, box-shadow 0.1s;
         }
@@ -88,6 +78,84 @@
             transform: translateY(4px);
             box-shadow: 0 2px 0 var(--dark);
         }
+
+        /* --- NEW MODAL STYLES --- */
+        .hidden { display: none !important; }
+
+        #modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(47, 62, 70, 0.7);
+            z-index: 1500; /* Above the map and FAB */
+        }
+
+        #add-cat-modal {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--white);
+            padding: 25px;
+            border: var(--border-thick);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            z-index: 2000; /* Topmost layer */
+            box-shadow: 0 8px 0 var(--dark);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #add-cat-modal h2 {
+            margin: 0;
+            color: var(--teal);
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group input, .form-group textarea {
+            font-family: 'Fredoka', sans-serif;
+            padding: 10px;
+            border: 2px solid var(--dark);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: 2px solid var(--dark);
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--dark);
+        }
+
+        .modal-buttons button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .cancel-btn { background: var(--light); color: var(--dark); }
+        .save-btn { background: var(--amber); color: var(--dark); }
     </style>
 </head>
 <body>
@@ -98,27 +166,74 @@
 
     <div id="map-container">
         <div id="map"></div>
+        <button class="add-cat-btn" onclick="openModal()">+</button>
+    </div>
+
+    <div id="modal-overlay" class="hidden"></div>
+
+    <div id="add-cat-modal" class="hidden">
+        <h2>Spot a Cat? 🐈</h2>
         
-        <button class="add-cat-btn" onclick="alert('Form goes here!')">+</button>
+        <div class="form-group">
+            <input type="text" id="cat-name" placeholder="Cat's Name (or 'Unknown')">
+        </div>
+        
+        <div class="form-group">
+            <textarea id="cat-notes" placeholder="Color, markings, behavior..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <input type="file" id="cat-photo" accept="image/*">
+        </div>
+        
+        <div class="modal-buttons">
+            <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+            <button class="save-btn" onclick="saveDummyCat()">Drop Pin</button>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Initialize map centered on your coordinates
-        var map = L.map('map', {
-            zoomControl: false // We can add this back later, hiding it for a cleaner UI right now
-        }).setView([33.767433, -84.333119], 15);
+        // Initialize Map
+        var map = L.map('map', { zoomControl: false }).setView([33.767433, -84.333119], 15);
 
-        // OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Add dummy cat marker
-        L.marker([33.767433, -84.333119]).addTo(map)
-            .bindPopup("<b style='font-family: Fredoka'>Test Cat</b><br>I live in the new UI shell.")
-            .openPopup();
+        // --- NEW MODAL JAVASCRIPT ---
+        
+        function openModal() {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            document.getElementById('add-cat-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
+            document.getElementById('add-cat-modal').classList.add('hidden');
+            
+            // Clear out the form when closed
+            document.getElementById('cat-name').value = '';
+            document.getElementById('cat-notes').value = '';
+            document.getElementById('cat-photo').value = '';
+        }
+
+        function saveDummyCat() {
+            // 1. Get the name they typed (or default to Mystery Cat)
+            let catName = document.getElementById('cat-name').value || 'Mystery Cat';
+            
+            // 2. Find exactly where the map is currently looking
+            let currentCenter = map.getCenter();
+            
+            // 3. Drop a local marker there (disappears when you refresh, but proves UI works)
+            L.marker([currentCenter.lat, currentCenter.lng]).addTo(map)
+                .bindPopup(`<b style='font-family: Fredoka'>${catName}</b><br>Meow!`)
+                .openPopup();
+                
+            // 4. Close the modal
+            closeModal();
+        }
     </script>
 </body>
 </html>
