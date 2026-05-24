@@ -238,7 +238,7 @@
         database.ref('cats').on('child_added', function(snapshot) {
             let catData = snapshot.val(); 
 
-            let marker = L.marker([catData.lat, catData.lng]).addTo(map);
+            let marker = L.marker([catData.lat, catData.lng], {icon: catIcon}).addTo(map);
 
             let popupHTML = `
                 <div style="text-align: center; font-family: 'Fredoka', sans-serif;">
