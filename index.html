@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo-Catter — Neighborhood Cat Tracker</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+    <style>
+        :root {
+            --coral: #FF6B6B;
+            --teal: #00A896;
+            --amber: #F9A620;
+            --dark: #2F3E46;
+            --light: #F4F7F6;
+            --white: #FFFFFF;
+            --border-thick: 3px solid var(--dark);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        body {
+            color: var(--dark);
+            background-color: var(--light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--coral);
+            color: var(--white);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: var(--border-thick);
+            z-index: 1000;
+        }
+
+        header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            background-color: var(--dark);
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: var(--white);
+        }
+
+        .app-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            height: calc(100vh - 65px);
+            min-height: 500px; 
+        }
+
+        #sidebar {
+            width: 320px;
+            background-color: var(--white);
+            border-right: var(--border-thick);
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+        }
+
+        #map {
+            flex: 1;
+            height: 100% !important;
+            min-height: 100%;
+            background: #e0edd4; 
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            background-color: var(--teal);
+            color: var(--white);
+            border-bottom: var(--border-thick);
+            font-weight: 600;
+        }
+
+        .cat-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .cat-item {
+            background: var(--light);
+            border: var(--border-thick);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cat-item:hover {
+            border-color: var(--coral);
+        }
+
+        .cat-item-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid var(--dark);
+            background-color: #ddd;
+        }
+
+        .cat-item-info h4 {
+            font-size: 16px;
+            color: var(--dark);
+        }
+
+        .cat-item-info p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .custom-marker {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 36px !important;
+            height: 36px !important;
+            background-color: var(--white);
+            border: 3px solid var(--dark);
+            border-radius: 50%;
+        }
+        
+        .custom-marker i {
+            font-size: 18px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(47, 62, 70, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal {
+            background-color: var(--white);
+            border: var(--border-thick);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 25px;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: var(--coral);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--dark);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: var(--border-thick);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: var(--light);
+            outline: none;
+        }
+
+        .color-selection {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .swatch {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--dark);
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .swatch.selected::after {
+            content: '✓';
+            color: white;
+            text-shadow: 0px 1px 2px black;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+        }
+
+        .custom-color-picker {
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--dark);
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+        }
+
+        .rating-stars i {
+            font-size: 24px;
+            cursor: pointer;
+            color: #DDD;
+        }
+
+        .rating-stars i.active {
+            color: var(--amber);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border: var(--border-thick);
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.1s ease;
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn-coral { background-color: var(--coral); color: white; }
+        .btn-teal { background-color: var(--teal); color: white; }
+
+        .profile-photo {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border: var(--border-thick);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background-color: var(--light);
+        }
+
+        .profile-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .meta-pill {
+            background-color: var(--light);
+            border: 2px solid var(--dark);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .history-timeline {
+            margin-top: 15px;
+            border-top: 2px dashed var(--dark);
+            padding-top: 15px;
+        }
+
+        .history-item {
+            background: var(--light);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            border-left: 4px solid var(--teal);
+        }
+
+        .map-instruction {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--dark);
+            color: var(--white);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            z-index: 1000;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="ti ti-cat"></i> Geo-Catter</h1>
+        <div class="subtitle">Neighborhood Cat Tracker</div>
+    </header>
+
+    <div class="app-container">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <i class="ti ti-list"></i> Registered Neighborhood Cats
+            </div>
+            <div class="cat-list" id="catListContainer"></div>
+        </div>
+
+        <div id="map"></div>
+        <div class="map-instruction">
+            <i class="ti ti-map-pin"></i> Click anywhere on the map to Cat-alog a cat!
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="formModal">
+        <div class="modal">
+            <button class="close-btn" onclick="closeModal('formModal')">&times;</button>
+            <div class="modal-title" id="formModalTitle"><i class="ti ti-edit"></i> Cat-alog a New Cat</div>
+            
+            <form id="catForm">
+                <input type="hidden" id="editCatId">
+                <input type="hidden" id="selectedLat">
+                <input type="hidden" id="selectedLng">
+
+                <div class="form-group">
+                    <label for="formUsername">Your Handle / Name</label>
+                    <input type="text" id="formUsername" required placeholder="e.g., CatLover42">
+                </div>
+
+                <div class="form-group" id="catNameGroup">
+                    <label for="formName">Cat's Name</label>
+                    <input type="text" id="formName" value="Unknown">
+                </div>
+
+                <div class="form-group">
+                    <label>Cat's Coat Color</label>
+                    <div class="color-selection">
+                        <div class="swatch selected" style="background-color: #E67E22;" onclick="selectSwatch(this, '#E67E22')"></div>
+                        <div class="swatch" style="background-color: #2C3E50;" onclick="selectSwatch(this, '#2C3E50')"></div>
+                        <div class="swatch" style="background-color: #BDC3C7;" onclick="selectSwatch(this, '#BDC3C7')"></div>
+                        <div class="swatch" style="background-color: #F1C40F;" onclick="selectSwatch(this, '#F1C40F')"></div>
+                        <div class="swatch" style="background-color: #FFFFFF;" onclick="selectSwatch(this, '#FFFFFF')"></div>
+                        <input type="color" id="customColor" class="custom-color-picker" onchange="selectCustomColor(this.value)">
+                        <input type="hidden" id="chosenColor" value="#E67E22">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="formDescription">Markings / Unique Description</label>
+                    <textarea id="formDescription" rows="2" placeholder="White socks, cross-eyed..." required></textarea>
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="formSize">Size</label>
+                        <select id="formSize">
+                            <option value="Small">Small</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Large">Large</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="formEnvironment">Status</label>
+                        <select id="formEnvironment">
+                            <option value="outdoor" selected>Outdoor / Roaming</option>
+                            <option value="indoor">Indoor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Cuteness</label>
+                        <div class="rating-stars" id="cutenessStars">
+                            <i class="ti ti-star active" onclick="setStars('cuteness', 1)"></i>
+                            <i class="ti ti-star active" onclick="setStars('cuteness', 2)"></i>
+                            <i class="ti ti-star active" onclick="setStars('cuteness', 3)"></i>
+                            <i class="ti ti-star active" onclick="setStars('cuteness', 4)"></i>
+                            <i class="ti ti-star active" onclick="setStars('cuteness', 5)"></i>
+                        </div>
+                        <input type="hidden" id="ratingCuteness" value="5">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Friendliness</label>
+                        <div class="rating-stars" id="friendlinessStars">
+                            <i class="ti ti-star active" onclick="setStars('friendliness', 1)"></i>
+                            <i class="ti ti-star active" onclick="setStars('friendliness', 2)"></i>
+                            <i class="ti ti-star active" onclick="setStars('friendliness', 3)"></i>
+                            <i class="ti ti-star" onclick="setStars('friendliness', 4)"></i>
+                            <i class="ti ti-star" onclick="setStars('friendliness', 5)"></i>
+                        </div>
+                        <input type="hidden" id="ratingFriendliness" value="3">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="formPhoto">Photo</label>
+                    <input type="file" id="formPhoto" accept="image/*" onchange="processPhoto(this)">
+                    <input type="hidden" id="photoData">
+                </div>
+
+                <div class="form-group">
+                    <label for="formNotes">Sighting Notes</label>
+                    <textarea id="formNotes" rows="2" placeholder="Chilling under a bush..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-teal">Save Cat Sighting! 🐾</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal">
+            <button class="close-btn" onclick="closeModal('profileModal')">&times;</button>
+            <div class="modal-title" id="profileTitle">Cat Profile</div>
+            
+            <img id="profileImg" class="profile-photo" src="" alt="Cat profile" style="display: none;">
+            
+            <div class="profile-meta-grid">
+                <div class="meta-pill"><i class="ti ti-resize"></i> Size: <span id="pSize"></span></div>
+                <div class="meta-pill"><i class="ti ti-home-shield"></i> Status: <span id="pEnv"></span></div>
+                <div class="meta-pill"><i class="ti ti-heart-filled" style="color:var(--coral)"></i> Cute: <span id="pCute"></span>/5</div>
+                <div class="meta-pill"><i class="ti ti-mood-smile-beam" style="color:var(--teal)"></i> Friendly: <span id="pFriend"></span>/5</div>
+            </div>
+
+            <div class="form-group">
+                <label>Description / Details:</label>
+                <p id="pDesc" style="background:#F4F7F6; padding: 10px; border-radius: 8px; border: 2px solid var(--dark)"></p>
+            </div>
+
+            <div class="btn-group" style="display:flex; gap: 10px; margin-top: 15px;">
+                <button id="logSightingBtn" class="btn btn-coral"><i class="ti ti-map-pin-share"></i> Log New Sighting Here</button>
+            </div>
+
+            <div class="history-timeline">
+                <h4>Sighting History Log</h4>
+                <div id="historyLogContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDP1rbmCKV6gvvD5ZOa0ckwj1t7QvtwnsI",
+            authDomain: "geo-catter.firebaseapp.com",
+            databaseURL: "https://geo-catter-default-rtdb.firebaseio.com",
+            projectId: "geo-catter",
+            storageBucket: "geo-catter.firebasestorage.app",
+            messagingSenderId: "465715371916",
+            appId: "1:465715371916:web:9b145d2476f3103e1c80a9",
+            measurementId: "G-1QK9CL0TK0"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const catsRef = ref(db, 'cats');
+
+        // Global Variables
+        let map;
+        let markersLayer;
+        let globalDatabaseObjects = {}; 
+        let activeSightingMode = false;
+        let temporarySightingCatId = null;
+
+        // Initialize Application Context
+        window.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            
+            // Listen to real-time changes directly via Firebase database socket channels
+            onValue(catsRef, (snapshot) => {
+                const data = snapshot.val();
+                globalDatabaseObjects = data || {};
+                renderMapPins();
+                renderSidebar();
+            });
+        });
+
+        function initMap() {
+            map = L.map('map').setView([33.7490, -84.3880], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            markersLayer = L.layerGroup().addTo(map);
+
+            map.on('click', (e) => {
+                if (activeSightingMode) {
+                    openUpdateSightingForm(temporarySightingCatId, e.latlng.lat, e.latlng.lng);
+                    activeSightingMode = false;
+                    temporarySightingCatId = null;
+                } else {
+                    openNewCatForm(e.latlng.lat, e.latlng.lng);
+                }
+            });
+
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 300);
+        }
+
+        function renderMapPins() {
+            markersLayer.clearLayers();
+            
+            Object.keys(globalDatabaseObjects).forEach(catId => {
+                const cat = globalDatabaseObjects[catId];
+                if (!cat.history) return;
+                
+                const historyArray = Object.values(cat.history);
+                const latestSighting = historyArray[historyArray.length - 1];
+                
+                const iconName = latestSighting.environment === 'indoor' ? 'ti-home' : 'ti-paw';
+                const contrastColor = getContrastYIQ(cat.color);
+                
+                const htmlString = `
+                    <div class="custom-marker" style="background-color: ${cat.color}; color: ${contrastColor};">
+                        <i class="ti ${iconName}"></i>
+                    </div>`;
+
+                const marker = L.marker([latestSighting.lat, latestSighting.lng], {
+                    icon: L.divIcon({
+                        html: htmlString,
+                        className: '',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
+                    })
+                });
+
+                marker.on('click', (e) => {
+                    L.DomEvent.stopPropagation(e);
+                    viewCatProfile(catId);
+                });
+
+                markersLayer.addLayer(marker);
+            });
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById('catListContainer');
+            container.innerHTML = '';
+
+            const catIds = Object.keys(globalDatabaseObjects);
+
+            if (catIds.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:20px; font-size:14px; color:#888;">No cats logged yet. Click the map to find one!</div>`;
+                return;
+            }
+
+            catIds.forEach(catId => {
+                const cat = globalDatabaseObjects[catId];
+                const historyArray = Object.values(cat.history);
+                const latest = historyArray[historyArray.length - 1];
+
+                const item = document.createElement('div');
+                item.className = 'cat-item';
+                item.onclick = () => {
+                    map.setView([latest.lat, latest.lng], 17);
+                    viewCatProfile(catId);
+                };
+
+                const thumbSrc = latest.photo || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="%23ccc" stroke-width="2"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/></svg>';
+
+                item.innerHTML = `
+                    <img class="cat-item-thumb" src="${thumbSrc}" alt="thumb">
+                    <div class="cat-item-info">
+                        <h4>${cat.name}</h4>
+                        <p><i class="ti ti-clock"></i> Seen: ${new Date(latest.timestamp).toLocaleDateString()}</p>
+                        <p style="color: ${cat.color}; font-weight:bold;">● ${cat.size} Sighting</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        document.getElementById('catForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const catId = document.getElementById('editCatId').value;
+            const username = document.getElementById('formUsername').value;
+            const lat = parseFloat(document.getElementById('selectedLat').value);
+            const lng = parseFloat(document.getElementById('selectedLng').value);
+            const size = document.getElementById('formSize').value;
+            const color = document.getElementById('chosenColor').value;
+            const environment = document.getElementById('formEnvironment').value;
+            const cuteness = parseInt(document.getElementById('ratingCuteness').value);
+            const friendliness = parseInt(document.getElementById('ratingFriendliness').value);
+            const description = document.getElementById('formDescription').value;
+            const notes = document.getElementById('formNotes').value;
+            const photo = document.getElementById('photoData').value;
+            const timestamp = new Date().toISOString();
+
+            const sightingData = { timestamp, username, lat, lng, environment, cuteness, friendliness, notes, photo };
+
+            if (catId) {
+                const targetHistoryRef = push(ref(db, `cats/${catId}/history`));
+                await set(targetHistoryRef, sightingData);
+            } else {
+                const newCatRef = push(catsRef);
+                const newCatId = newCatRef.key;
+                
+                const newCatData = {
+                    id: newCatId,
+                    name: document.getElementById('formName').value || 'Unknown',
+                    color,
+                    size,
+                    description,
+                    history: {}
+                };
+                
+                await set(newCatRef, newCatData);
+                const initialSightingRef = push(ref(db, `cats/${newCatId}/history`));
+                await set(initialSightingRef, sightingData);
+            }
+
+            closeModal('formModal');
+        });
+
+        function viewCatProfile(catId) {
+            const cat = globalDatabaseObjects[catId];
+            if (!cat) return;
+
+            const historyArray = Object.values(cat.history);
+            const latest = historyArray[historyArray.length - 1];
+
+            document.getElementById('profileTitle').innerText = `Profile: ${cat.name}`;
+            document.getElementById('pSize').innerText = cat.size;
+            document.getElementById('pEnv').innerText = latest.environment.toUpperCase();
+            document.getElementById('pCute').innerText = latest.cuteness;
+            document.getElementById('pFriend').innerText = latest.friendliness;
+            document.getElementById('pDesc').innerText = cat.description;
+
+            const imgElement = document.getElementById('profileImg');
+            if (latest.photo) {
+                imgElement.src = latest.photo;
+                imgElement.style.display = 'block';
+            } else {
+                imgElement.style.display = 'none';
+            }
+
+            const logContainer = document.getElementById('historyLogContainer');
+            logContainer.innerHTML = '';
+            
+            [...historyArray].reverse().forEach(s => {
+                const dateString = new Date(s.timestamp).toLocaleString();
+                const element = document.createElement('div');
+                element.className = 'history-item';
+                element.innerHTML = `
+                    <strong>${dateString}</strong> by <em>@${s.username}</em><br>
+                    Status: ${s.environment} • Cute: ${s.cuteness}★ • Friendly: ${s.friendliness}★<br>
+                    ${s.notes ? `"${s.notes}"` : 'No notes added.'}
+                `;
+                logContainer.appendChild(element);
+            });
+
+            const sightingBtn = document.getElementById('logSightingBtn');
+            sightingBtn.onclick = () => {
+                closeModal('profileModal');
+                activeSightingMode = true;
+                temporarySightingCatId = catId;
+                alert("✨ Click a new spot on the map to log where you saw this cat!");
+            };
+
+            openModal('profileModal');
+        }
+
+        function openUpdateSightingForm(catId, lat, lng) {
+            const cat = globalDatabaseObjects[catId];
+            if (!cat) return;
+
+            document.getElementById('catForm').reset();
+            document.getElementById('editCatId').value = catId;
+            document.getElementById('selectedLat').value = lat;
+            document.getElementById('selectedLng').value = lng;
+            document.getElementById('photoData').value = '';
+            
+            document.getElementById('catNameGroup').style.display = 'none';
+            document.getElementById('formModalTitle').innerHTML = `<i class="ti ti-map-pin"></i> Log New Sighting for ${cat.name}`;
+            
+            const historyArray = Object.values(cat.history);
+            const latest = historyArray[historyArray.length - 1];
+            
+            setStars('cuteness', latest.cuteness || 5);
+            setStars('friendliness', latest.friendliness || 3);
+            document.getElementById('formSize').value = cat.size;
+            document.getElementById('formEnvironment').value = latest.environment;
+
+            openModal('formModal');
+        }
+
+        window.openNewCatForm = function(lat, lng) {
+            document.getElementById('catForm').reset();
+            document.getElementById('editCatId').value = '';
+            document.getElementById('selectedLat').value = lat;
+            document.getElementById('selectedLng').value = lng;
+            document.getElementById('photoData').value = '';
+            document.getElementById('catNameGroup').style.display = 'block';
+            document.getElementById('formModalTitle').innerHTML = '<i class="ti ti-cat"></i> Cat-alog a New Cat';
+            setStars('cuteness', 5);
+            setStars('friendliness', 3);
+            selectCustomColor('#E67E22');
+            openModal('formModal');
+        };
+
+        // Exposing global actions securely out of the modular sandbox
+        window.openModal = function(id) { document.getElementById(id).classList.add('active'); };
+        window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); };
+        window.selectSwatch = function(element, hex) {
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById('chosenColor').value = hex;
+        };
+        window.selectCustomColor = function(hex) {
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+            document.getElementById('chosenColor').value = hex;
+        };
+        window.setStars = function(metric, value) {
+            document.getElementById(`rating${metric.charAt(0).toUpperCase() + metric.slice(1)}`).value = value;
+            const stars = document.querySelectorAll(`#${metric}Stars i`);
+            stars.forEach((star, index) => {
+                if (index < value) { star.classList.add('active'); } 
+                else { star.classList.remove('active'); }
+            });
+        };
+        window.processPhoto = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const max_size = 280; 
+                    if (width > height) {
+                        if (width > max_size) { height *= max_size / width; width = max_size; }
+                    } else {
+                        if (height > max_size) { width *= max_size / height; height = max_size; }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.5); 
+                    document.getElementById('photoData').value = dataUrl;
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        };
+        window.viewCatProfile = viewCatProfile;
+
+        function getContrastYIQ(hexcolor){
+            hexcolor = hexcolor.replace("#", "");
+            if(hexcolor.length === 3) {
+                hexcolor = hexcolor[0]+hexcolor[0]+hexcolor[1]+hexcolor[1]+hexcolor[2]+hexcolor[2];
+            }
+            const r = parseInt(hexcolor.substr(0,2),16);
+            const g = parseInt(hexcolor.substr(2,2),16);
+            const b = parseInt(hexcolor.substr(4,2),16);
+            const yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? '#2F3E46' : '#FFFFFF';
+        }
+    </script>
+</body>
+</html>
