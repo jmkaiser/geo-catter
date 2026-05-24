@@ -11,89 +11,99 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        :root {
-            --coral: #FF6B6B; --teal: #00A896; --amber: #F9A620;
-            --dark: #2F3E46; --light: #F4F7F6; --white: #FFFFFF;
-            --border-thick: 3px solid var(--dark);
-        }
+      :root {
+    --coral: #FF6B6B; --teal: #00A896; --amber: #F9A620;
+    --dark: #2F3E46; --light: #F4F7F6; --white: #FFFFFF;
+    --border-thick: 3px solid var(--dark);
+}
 
-        * { box-sizing: border-box; }
+* { box-sizing: border-box; }
 
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Fredoka', sans-serif;
-            background-color: var(--light); color: var(--dark);
-            display: flex; flex-direction: column; height: 100vh;
-        }
+body {
+    margin: 0; padding: 0;
+    font-family: 'Fredoka', sans-serif;
+    background-color: var(--light); color: var(--dark);
+    display: flex; flex-direction: column; height: 100vh;
+}
 
-        header {
-            background-color: var(--teal); color: var(--white);
-            padding: 15px 20px; text-align: center;
-            border-bottom: var(--border-thick); z-index: 1000;
-        }
+/* --- POP ART HEADER --- */
+header {
+    background-color: #FFDE00; /* Pop Art Yellow */
+    color: #000000;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 5px solid #000;
+    position: relative;
+    /* Ben-Day dot pattern */
+    background-image: radial-gradient(#000 10%, transparent 11%), 
+                      radial-gradient(#000 10%, transparent 11%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    z-index: 1000;
+}
 
-        h1 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
+h1 { 
+    margin: 0;
+    font-size: 3rem;
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: -2px;
+    /* Thick black text shadow for that comic book look */
+    text-shadow: 4px 4px 0px #FF6B6B, 6px 6px 0px #000;
+    transform: rotate(-2deg);
+    display: inline-block;
+}
 
-        #map-container { flex-grow: 1; position: relative; }
-        #map { width: 100%; height: 100%; }
+/* --- MAP & UI --- */
+#map-container { flex-grow: 1; position: relative; }
+#map { width: 100%; height: 100%; }
 
-        /* Forces a crosshair on the map during targeting mode */
-        .targeting-mode, .targeting-mode * { cursor: crosshair !important; }
+.targeting-mode, .targeting-mode * { cursor: crosshair !important; }
 
-        #locate-btn {
-            position: absolute; top: 20px; right: 20px; z-index: 1000; 
-            padding: 10px 15px; border-radius: 8px; background: var(--teal); 
-            color: white; cursor: pointer; border: 2px solid var(--dark); 
-            font-family: 'Fredoka', sans-serif; font-weight: bold; 
-            box-shadow: 0 4px 0 var(--dark); transition: transform 0.1s, box-shadow 0.1s;
-        }
-        #locate-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--dark); }
+#locate-btn {
+    position: absolute; top: 20px; right: 20px; z-index: 1000; 
+    padding: 10px 15px; border-radius: 8px; background: var(--teal); 
+    color: white; cursor: pointer; border: 2px solid var(--dark); 
+    font-family: 'Fredoka', sans-serif; font-weight: bold; 
+    box-shadow: 0 4px 0 var(--dark);
+}
 
-        .add-cat-btn {
-            position: absolute; bottom: 30px; right: 30px;
-            background-color: var(--coral); color: var(--dark);
-            border: var(--border-thick); border-radius: 50%;
-            width: 65px; height: 65px; font-size: 2.5rem;
-            font-family: 'Fredoka', sans-serif;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 1000;
-            box-shadow: 0 6px 0 var(--dark); transition: all 0.2s;
-        }
-        .add-cat-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--dark); }
+.add-cat-btn {
+    position: absolute; bottom: 30px; right: 30px;
+    background-color: var(--coral); color: var(--dark);
+    border: var(--border-thick); border-radius: 50%;
+    width: 65px; height: 65px; font-size: 2.5rem;
+    cursor: pointer; z-index: 1000;
+    box-shadow: 0 6px 0 var(--dark); transition: all 0.2s;
+}
 
-        .hidden { display: none !important; }
+.hidden { display: none !important; }
 
-        #modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(47, 62, 70, 0.7); z-index: 1500; 
-        }
+#modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(47, 62, 70, 0.7); z-index: 1500; 
+}
 
-        #add-cat-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--white); padding: 25px;
-            border: var(--border-thick); border-radius: 15px;
-            width: 90%; max-width: 400px; z-index: 2000; 
-            box-shadow: 0 8px 0 var(--dark); display: flex; flex-direction: column; gap: 15px;
-        }
+#add-cat-modal {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: var(--white); padding: 25px;
+    border: var(--border-thick); border-radius: 15px;
+    width: 90%; max-width: 400px; z-index: 2000; 
+    box-shadow: 0 8px 0 var(--dark); display: flex; flex-direction: column; gap: 10px;
+}
 
-        #add-cat-modal h2 { margin: 0; color: var(--teal); font-size: 1.5rem; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+input, textarea { 
+    font-family: 'Fredoka', sans-serif; padding: 10px; 
+    border: 2px solid var(--dark); border-radius: 8px; 
+}
 
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group input, .form-group textarea {
-            font-family: 'Fredoka', sans-serif; padding: 10px;
-            border: 2px solid var(--dark); border-radius: 8px; font-size: 1rem;
-        }
-        .form-group textarea { resize: vertical; min-height: 80px; }
-
-        .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
-        .modal-buttons button {
-            flex: 1; padding: 12px; font-family: 'Fredoka', sans-serif;
-            font-weight: 600; font-size: 1.1rem; border: 2px solid var(--dark); 
-            border-radius: 8px; cursor: pointer; box-shadow: 0 4px 0 var(--dark);
-        }
-        .modal-buttons button:active { transform: translateY(4px); box-shadow: none; }
-        .cancel-btn { background: var(--light); color: var(--dark); }
-        .save-btn { background: var(--amber); color: var(--dark); }
+.modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
+button { 
+    padding: 12px; font-family: 'Fredoka', sans-serif; 
+    font-weight: 600; border: 2px solid var(--dark); 
+    border-radius: 8px; cursor: pointer; 
+}
     </style>
 </head>
 <body>
