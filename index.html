@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geo-Catter — Neighborhood Cat Tracker</title>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
@@ -16,92 +15,27 @@
             --dark: #2F3E46; --light: #F4F7F6; --white: #FFFFFF;
             --border-thick: 3px solid var(--dark);
         }
-
         * { box-sizing: border-box; }
-
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Fredoka', sans-serif;
-            background-color: var(--light); color: var(--dark);
-            display: flex; flex-direction: column; height: 100vh;
-        }
-
-        header {
-            background-color: var(--teal); color: var(--white);
-            padding: 15px 20px; text-align: center;
-            border-bottom: var(--border-thick); z-index: 1000;
-        }
-
+        body { margin: 0; padding: 0; font-family: 'Fredoka', sans-serif; background-color: var(--light); color: var(--dark); display: flex; flex-direction: column; height: 100vh; }
+        header { background-color: var(--teal); color: var(--white); padding: 15px 20px; text-align: center; border-bottom: var(--border-thick); z-index: 1000; }
         h1 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
-
         #map-container { flex-grow: 1; position: relative; }
         #map { width: 100%; height: 100%; }
-
-        /* Forces a crosshair on the map during targeting mode */
         .targeting-mode, .targeting-mode * { cursor: crosshair !important; }
-
-        #locate-btn {
-            position: absolute; top: 20px; right: 20px; z-index: 1000; 
-            padding: 10px 15px; border-radius: 8px; background: var(--teal); 
-            color: white; cursor: pointer; border: 2px solid var(--dark); 
-            font-family: 'Fredoka', sans-serif; font-weight: bold; 
-            box-shadow: 0 4px 0 var(--dark); transition: transform 0.1s, box-shadow 0.1s;
-        }
-        #locate-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--dark); }
-
-        .add-cat-btn {
-            position: absolute; bottom: 30px; right: 30px;
-            background-color: var(--coral); color: var(--dark);
-            border: var(--border-thick); border-radius: 50%;
-            width: 65px; height: 65px; font-size: 2.5rem;
-            font-family: 'Fredoka', sans-serif;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 1000;
-            box-shadow: 0 6px 0 var(--dark); transition: all 0.2s;
-        }
-        .add-cat-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--dark); }
-
+        #locate-btn { position: absolute; top: 20px; right: 20px; z-index: 1000; padding: 10px 15px; border-radius: 8px; background: var(--teal); color: white; cursor: pointer; border: 2px solid var(--dark); font-family: 'Fredoka', sans-serif; font-weight: bold; box-shadow: 0 4px 0 var(--dark); }
+        .add-cat-btn { position: absolute; bottom: 30px; right: 30px; background-color: var(--coral); color: var(--dark); border: var(--border-thick); border-radius: 50%; width: 65px; height: 65px; font-size: 2.5rem; cursor: pointer; z-index: 1000; box-shadow: 0 6px 0 var(--dark); transition: all 0.2s; }
         .hidden { display: none !important; }
-
-        #modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(47, 62, 70, 0.7); z-index: 1500; 
-        }
-
-        #add-cat-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--white); padding: 25px;
-            border: var(--border-thick); border-radius: 15px;
-            width: 90%; max-width: 400px; z-index: 2000; 
-            box-shadow: 0 8px 0 var(--dark); display: flex; flex-direction: column; gap: 15px;
-        }
-
-        #add-cat-modal h2 { margin: 0; color: var(--teal); font-size: 1.5rem; }
-
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(47, 62, 70, 0.7); z-index: 1500; }
+        #add-cat-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--white); padding: 25px; border: var(--border-thick); border-radius: 15px; width: 90%; max-width: 400px; z-index: 2000; box-shadow: 0 8px 0 var(--dark); display: flex; flex-direction: column; gap: 10px; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group input, .form-group textarea {
-            font-family: 'Fredoka', sans-serif; padding: 10px;
-            border: 2px solid var(--dark); border-radius: 8px; font-size: 1rem;
-        }
-        .form-group textarea { resize: vertical; min-height: 80px; }
-
+        input, textarea { font-family: 'Fredoka', sans-serif; padding: 10px; border: 2px solid var(--dark); border-radius: 8px; }
         .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
-        .modal-buttons button {
-            flex: 1; padding: 12px; font-family: 'Fredoka', sans-serif;
-            font-weight: 600; font-size: 1.1rem; border: 2px solid var(--dark); 
-            border-radius: 8px; cursor: pointer; box-shadow: 0 4px 0 var(--dark);
-        }
-        .modal-buttons button:active { transform: translateY(4px); box-shadow: none; }
-        .cancel-btn { background: var(--light); color: var(--dark); }
-        .save-btn { background: var(--amber); color: var(--dark); }
+        button { padding: 12px; font-family: 'Fredoka', sans-serif; font-weight: 600; border: 2px solid var(--dark); border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Geo-Catter 🐾</h1>
-    </header>
-
+    <header><h1>Geo-Catter 🐾</h1></header>
     <div id="map-container">
         <div id="map"></div>
         <button id="locate-btn" onclick="locateUser()">📍 Find Me</button>
@@ -111,15 +45,14 @@
     <div id="modal-overlay" class="hidden"></div>
     <div id="add-cat-modal" class="hidden">
         <h2>Spot a Cat? 🐈</h2>
-        <div class="form-group"><input type="text" id="cat-name" placeholder="Cat's Name (or 'Unknown')"></div>
-        <div class="form-group"><textarea id="cat-notes" placeholder="Color, markings, behavior..."></textarea></div>
-        <div class="form-group">
-            <input type="file" id="cat-photo" accept="image/*">
-            <input type="hidden" id="photoData">
-        </div>
+        <div class="form-group"><input type="text" id="cat-name" placeholder="Cat's Name"></div>
+        <div class="form-group"><textarea id="cat-notes" placeholder="Notes..."></textarea></div>
+        <div class="form-group"><label>Cuteness (1-5):</label><input type="number" id="cat-cuteness" min="1" max="5" value="5"></div>
+        <div class="form-group"><label>Friendliness (1-5):</label><input type="number" id="cat-friendliness" min="1" max="5" value="5"></div>
+        <div class="form-group"><input type="file" id="cat-photo" accept="image/*"><input type="hidden" id="photoData"></div>
         <div class="modal-buttons">
             <button class="cancel-btn" onclick="closeModal()">Cancel</button>
-            <button class="save-btn" onclick="saveCatToDatabase()">Save to Database</button>
+            <button class="save-btn" onclick="saveCatToDatabase()">Drop Pin</button>
         </div>
     </div>
 
@@ -128,175 +61,72 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDP1rbmCKV6gvvD5ZOa0ckwj1t7QvtwnsI",
-            authDomain: "geo-catter.firebaseapp.com",
-            databaseURL: "https://geo-catter-default-rtdb.firebaseio.com",
-            projectId: "geo-catter",
-            storageBucket: "geo-catter.firebasestorage.app",
-            messagingSenderId: "465715371916",
-            appId: "1:465715371916:web:9b145d2476f3103e1c80a9",
-            measurementId: "G-1QK9CL0TK0"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyDP1rbmCKV6gvvD5ZOa0ckwj1t7QvtwnsI", authDomain: "geo-catter.firebaseapp.com", databaseURL: "https://geo-catter-default-rtdb.firebaseio.com", projectId: "geo-catter", storageBucket: "geo-catter.firebasestorage.app", messagingSenderId: "465715371916", appId: "1:465715371916:web:9b145d2476f3103e1c80a9" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
         var map = L.map('map', { zoomControl: false }).setView([33.767433, -84.333119], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-        // --- DEFINE CUSTOM CAT ICON ---
-        var catIcon = L.icon({
-            iconUrl: 'https://i.ibb.co/LD4QTMbF/Chat-GPT-Image-May-24-2026-05-15-02-PM.png', // You can change this URL to any icon you like!
-            iconSize: [30, 30], // Size of the icon
-            iconAnchor: [20, 40], // Point of the icon which will correspond to marker's location
-            popupAnchor: [0, -40] // Point from which the popup should open relative to the iconAnchor
-        });
+        var catIcon = L.icon({ iconUrl: 'https://i.ibb.co/L51tT2R/cat-paw.png', iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -40] });
 
-        // --- NEW TARGETING LOGIC ---
-        let isPlacingCat = false;
-        let pendingLat = null;
-        let pendingLng = null;
+        let isPlacingCat = false, pendingLat, pendingLng;
 
         function togglePlacingCat() {
-            let btn = document.getElementById('add-btn');
-            
-            // If we are NOT currently placing a cat, turn Targeting Mode ON
-            if (!isPlacingCat) {
-                isPlacingCat = true;
-                document.getElementById('map-container').classList.add('targeting-mode');
-                btn.innerHTML = '✖'; // Change icon to a cancel X
-                btn.style.backgroundColor = '#95A5A6'; // Grey it out
-            } 
-            // If we ARE placing a cat and change our mind, turn it OFF
-            else {
-                cancelPlacingCat();
-            }
+            isPlacingCat = !isPlacingCat;
+            document.getElementById('map-container').classList.toggle('targeting-mode');
+            document.getElementById('add-btn').innerHTML = isPlacingCat ? '✖' : '+';
         }
 
-        function cancelPlacingCat() {
-            isPlacingCat = false;
-            document.getElementById('map-container').classList.remove('targeting-mode');
-            let btn = document.getElementById('add-btn');
-            btn.innerHTML = '+';
-            btn.style.backgroundColor = 'var(--coral)';
-        }
-
-        // The Map Click Listener: This triggers when you click the map!
         map.on('click', function(e) {
-            // Only drop a pin if they clicked the "+" button first
             if (isPlacingCat) {
-                pendingLat = e.latlng.lat;
-                pendingLng = e.latlng.lng;
-                
-                cancelPlacingCat(); // Reset the UI button
-                openModal(); // Pop open the form!
+                pendingLat = e.latlng.lat; pendingLng = e.latlng.lng;
+                togglePlacingCat();
+                document.getElementById('modal-overlay').classList.remove('hidden');
+                document.getElementById('add-cat-modal').classList.remove('hidden');
             }
         });
-        // ---------------------------
 
-        function openModal() {
-            document.getElementById('modal-overlay').classList.remove('hidden');
-            document.getElementById('add-cat-modal').classList.remove('hidden');
+        function saveCatToDatabase() {
+            let newCatData = {
+                name: document.getElementById('cat-name').value,
+                notes: document.getElementById('cat-notes').value,
+                photo: document.getElementById('photoData').value,
+                cuteness: document.getElementById('cat-cuteness').value,
+                friendliness: document.getElementById('cat-friendliness').value,
+                lat: pendingLat || map.getCenter().lat, lng: pendingLng || map.getCenter().lng
+            };
+            database.ref('cats').push(newCatData).then(() => closeModal());
         }
-       
+
+        database.ref('cats').on('child_added', function(snapshot) {
+            let d = snapshot.val();
+            let stars = (n) => '⭐'.repeat(n);
+            L.marker([d.lat, d.lng], {icon: catIcon}).addTo(map).bindPopup(`<h3>${d.name}</h3><img src="${d.photo}" style="width:100px"><p>${d.notes}</p><b>Cute:</b> ${stars(d.cuteness)}<br><b>Friendly:</b> ${stars(d.friendliness)}`);
+        });
+
+        document.getElementById('cat-photo').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 200; canvas.height = (img.height/img.width) * 200;
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    document.getElementById('photoData').value = canvas.toDataURL('image/jpeg', 0.5);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
         function closeModal() {
             document.getElementById('modal-overlay').classList.add('hidden');
             document.getElementById('add-cat-modal').classList.add('hidden');
-            document.getElementById('cat-name').value = '';
-            document.getElementById('cat-notes').value = '';
-            document.getElementById('cat-photo').value = '';
-            document.getElementById('photoData').value = ''; 
         }
 
-        // --- UPDATED CLOUD SAVE FUNCTION ---
-        function saveCatToDatabase() {
-            let catName = document.getElementById('cat-name').value || 'Mystery Cat';
-            let catNotes = document.getElementById('cat-notes').value || 'No notes.';
-            let photoData = document.getElementById('photoData').value;
-            
-            let newCatData = {
-                name: catName,
-                notes: catNotes,
-                photo: photoData,
-                // We now use pendingLat/Lng instead of map.getCenter!
-                lat: pendingLat || map.getCenter().lat, 
-                lng: pendingLng || map.getCenter().lng
-            };
-
-            database.ref('cats').push(newCatData)
-                .then(() => {
-                    console.log("Hooray! Cat saved to the cloud database!");
-                    closeModal();
-                })
-                .catch((error) => {
-                    console.error("Uh oh, something went wrong:", error);
-                });
-        }
-
-        // --- CLOUD READER ---
-        database.ref('cats').on('child_added', function(snapshot) {
-            let catData = snapshot.val(); 
-
-            let marker = L.marker([catData.lat, catData.lng], {icon: catIcon}).addTo(map);
-
-            let popupHTML = `
-                <div style="text-align: center; font-family: 'Fredoka', sans-serif;">
-                    <h3 style="margin: 0 0 5px 0; color: #00A896;">${catData.name}</h3>
-                    <img src="${catData.photo}" style="width: 150px; border-radius: 8px; border: 2px solid #2F3E46;">
-                    <p style="margin: 5px 0 0 0;">${catData.notes}</p>
-                </div>
-            `;
-
-            marker.bindPopup(popupHTML);
-        });
-
-        // --- THE SHRINK-RAY CODE ---
-        document.getElementById('cat-photo').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 280; 
-                    canvas.height = (img.height / img.width) * 280;
-                    
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.5); 
-                    document.getElementById('photoData').value = dataUrl;
-                }
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // --- GEOLOCATION: FIND THE USER ---
         function locateUser() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    let userLat = position.coords.latitude;
-                    let userLng = position.coords.longitude;
-                    
-                    map.flyTo([userLat, userLng], 17, { animate: true, duration: 1.5 });
-                    
-                    L.marker([userLat, userLng]).addTo(map)
-                        .bindPopup("<b style='font-family: Fredoka'>📍 You are here!</b>")
-                        .openPopup();
-                        
-                }, function(error) {
-                    console.error("Geolocation failed:", error);
-                    alert("Couldn't find your location. Make sure you allowed location permissions!");
-                });
-            } else {
-                alert("Your browser doesn't support geolocation.");
-            }
+            navigator.geolocation.getCurrentPosition(pos => map.flyTo([pos.coords.latitude, pos.coords.longitude], 17));
         }
     </script>
 </body>
