@@ -47,7 +47,18 @@ h1 {
     </style>
 </head>
 <body>
+/* Fixes the map container height */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 
+#map-container { 
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Ensures the container fills the viewport */
+}
     <header>
         <h1>Geo-Catter 🐾</h1>
     </header>
