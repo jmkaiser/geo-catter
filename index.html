@@ -33,11 +33,31 @@
         }
 
         h1 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
-<button id="locate-btn" onclick="locateUser()" style="position: absolute; top: 80px; right: 20px; z-index: 1000; padding: 10px 15px; border-radius: 8px; background: var(--teal); color: white; cursor: pointer; border: 2px solid var(--dark); font-family: 'Fredoka', sans-serif; font-weight: bold; box-shadow: 0 4px 0 var(--dark);">
-    📍 Find Me
-</button>
+
         #map-container { flex-grow: 1; position: relative; }
         #map { width: 100%; height: 100%; }
+
+        /* The Geolocation Find Me Button Style */
+        #locate-btn {
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 1000; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
+            background: var(--teal); 
+            color: white; 
+            cursor: pointer; 
+            border: 2px solid var(--dark); 
+            font-family: 'Fredoka', sans-serif; 
+            font-weight: bold; 
+            box-shadow: 0 4px 0 var(--dark);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        #locate-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--dark);
+        }
 
         .add-cat-btn {
             position: absolute; bottom: 30px; right: 30px;
@@ -96,6 +116,7 @@
 
     <div id="map-container">
         <div id="map"></div>
+        <button id="locate-btn" onclick="locateUser()">📍 Find Me</button>
         <button class="add-cat-btn" onclick="openModal()">+</button>
     </div>
 
@@ -115,24 +136,22 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-     // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDP1rbmCKV6gvvD5ZOa0ckwj1t7QvtwnsI",
-  authDomain: "geo-catter.firebaseapp.com",
-  databaseURL: "https://geo-catter-default-rtdb.firebaseio.com",
-  projectId: "geo-catter",
-  storageBucket: "geo-catter.firebasestorage.app",
-  messagingSenderId: "465715371916",
-  appId: "1:465715371916:web:9b145d2476f3103e1c80a9",
-  measurementId: "G-1QK9CL0TK0"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyDP1rbmCKV6gvvD5ZOa0ckwj1t7QvtwnsI",
+            authDomain: "geo-catter.firebaseapp.com",
+            databaseURL: "https://geo-catter-default-rtdb.firebaseio.com",
+            projectId: "geo-catter",
+            storageBucket: "geo-catter.firebasestorage.app",
+            messagingSenderId: "465715371916",
+            appId: "1:465715371916:web:9b145d2476f3103e1c80a9",
+            measurementId: "G-1QK9CL0TK0"
+        };
 
-        // Turn on Firebase!
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -146,8 +165,6 @@ const firebaseConfig = {
             document.getElementById('modal-overlay').classList.remove('hidden');
             document.getElementById('add-cat-modal').classList.remove('hidden');
         }
-// ... your existing code (like saveCatToDatabase, etc.) is up here ...
-
        
         function closeModal() {
             document.getElementById('modal-overlay').classList.add('hidden');
@@ -158,15 +175,13 @@ const firebaseConfig = {
             document.getElementById('photoData').value = ''; 
         }
 
-        // --- NEW CLOUD SAVE FUNCTION ---
+        // --- CLOUD SAVE FUNCTION ---
         function saveCatToDatabase() {
-            // 1. Gather all the data from the form
             let catName = document.getElementById('cat-name').value || 'Mystery Cat';
             let catNotes = document.getElementById('cat-notes').value || 'No notes.';
             let photoData = document.getElementById('photoData').value;
             let currentCenter = map.getCenter();
 
-            // 2. Package it into a digital folder
             let newCatData = {
                 name: catName,
                 notes: catNotes,
@@ -175,7 +190,6 @@ const firebaseConfig = {
                 lng: currentCenter.lng
             };
 
-            // 3. Send it to Firebase into a section called "cats"
             database.ref('cats').push(newCatData)
                 .then(() => {
                     console.log("Hooray! Cat saved to the cloud database!");
@@ -185,16 +199,13 @@ const firebaseConfig = {
                     console.error("Uh oh, something went wrong:", error);
                 });
         }
-// --- CLOUD READER: LOAD CATS ONTO THE MAP ---
-        // This tells the app to listen to the "cats" folder in the cloud
+
+        // --- CLOUD READER: LOAD CATS ONTO THE MAP ---
         database.ref('cats').on('child_added', function(snapshot) {
-            // Grab the data for this specific cat
             let catData = snapshot.val(); 
 
-            // 1. Draw a pin on the map using the saved coordinates
             let marker = L.marker([catData.lat, catData.lng]).addTo(map);
 
-            // 2. Build the popup bubble using the secret photo code!
             let popupHTML = `
                 <div style="text-align: center; font-family: 'Fredoka', sans-serif;">
                     <h3 style="margin: 0 0 5px 0; color: #00A896;">${catData.name}</h3>
@@ -203,9 +214,9 @@ const firebaseConfig = {
                 </div>
             `;
 
-            // 3. Attach the bubble to the pin
             marker.bindPopup(popupHTML);
         });
+
         // --- THE SHRINK-RAY CODE ---
         document.getElementById('cat-photo').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -230,11 +241,8 @@ const firebaseConfig = {
             };
             reader.readAsDataURL(file);
         });
-// ... your existing code (like saveCatToDatabase, etc.) is up here ...
 
-        // ==========================================
-        // PASTE STEP 2 RIGHT HERE:
-        // ==========================================
+        // --- GEOLOCATION: FIND THE USER ---
         function locateUser() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
@@ -258,9 +266,6 @@ const firebaseConfig = {
                 alert("Your browser doesn't support geolocation.");
             }
         }
-        // ==========================================
-
     </script>
 </body>
 </html>
-   
