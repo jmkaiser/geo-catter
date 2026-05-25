@@ -121,7 +121,7 @@
             cursor: crosshair !important;
         }
 
-        /* --- CRITICAL FIX: MODAL VISIBILITY --- */
+        /* --- MODALS & FORMS --- */
         .hidden {
             display: none !important;
         }
@@ -191,8 +191,28 @@
             cursor: pointer;
         }
 
-        .cancel-btn { background: #NE7E7E; }
+        .cancel-btn { background: #FF9F1C; color: white; }
         .save-btn { background: var(--mint); color: white; }
+
+        /* --- NEW: DELETE BUTTON STYLE --- */
+        .delete-btn {
+            background-color: var(--coral);
+            color: white;
+            border: 2px solid #000;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            box-shadow: 2px 2px 0px #000;
+            transition: transform 0.1s;
+        }
+        .delete-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px #000;
+        }
     </style>
 </head>
 <body>
@@ -218,7 +238,7 @@
         </div>
         <div class="modal-buttons">
             <button class="cancel-btn" onclick="closeModal()">Cancel</button>
-            <button class="save-btn" onclick="saveCatToDatabase()">Save to Database</button>
+            <button class="save-btn" onclick="saveCatToDatabase()">Save</button>
         </div>
     </div>
 
@@ -246,13 +266,15 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // --- TIP: Swapped this to a reliable direct image URL so your markers render correctly! ---
         var catIcon = L.icon({
             iconUrl: 'https://i.ibb.co/9mCTPf4V/Chat-GPT-Image-May-24-2026-05-15-02-PM.png', 
             iconSize: [35, 35], 
             iconAnchor: [17, 35], 
             popupAnchor: [0, -35] 
         });
+
+        // --- NEW: Dictionary to keep track of marker layers by their Firebase ID ---
+        let catMarkers = {};
 
         let isPlacingCat = false;
         let pendingLat = null;
@@ -317,29 +339,51 @@
             };
 
             database.ref('cats').push(newCatData)
-                .then(() => {
-                    console.log("Hooray! Cat saved to the cloud database!");
-                    closeModal();
-                })
-                .catch((error) => {
-                    console.error("Uh oh, something went wrong:", error);
-                });
+                .then(() => closeModal())
+                .catch((error) => console.error("Uh oh, something went wrong:", error));
         }
 
+        // --- UPDATED: Cloud Reader (Now captures the ID and saves the marker) ---
         database.ref('cats').on('child_added', function(snapshot) {
             let catData = snapshot.val(); 
+            let catId = snapshot.key; // The unique Firebase ID for this cat
 
             let marker = L.marker([catData.lat, catData.lng], {icon: catIcon}).addTo(map);
+            
+            // Store the marker so we can easily delete it later
+            catMarkers[catId] = marker;
 
+            // Notice the new <button> at the bottom of the HTML string!
             let popupHTML = `
                 <div style="text-align: center; font-family: 'Fredoka', sans-serif;">
                     <h3 style="margin: 0 0 5px 0; color: #00A896;">${catData.name}</h3>
                     ${catData.photo ? `<img src="${catData.photo}" style="width: 150px; border-radius: 8px; border: 2px solid #2F3E46;">` : ''}
                     <p style="margin: 5px 0 0 0;">${catData.notes}</p>
+                    <button class="delete-btn" onclick="deleteCat('${catId}')">🗑️ Remove</button>
                 </div>
             `;
 
             marker.bindPopup(popupHTML);
+        });
+
+        // --- NEW: Function to delete a cat from Firebase ---
+        function deleteCat(catId) {
+            // Ask for confirmation before deleting
+            if(confirm("Are you sure you want to remove this cat?")) {
+                database.ref('cats/' + catId).remove()
+                    .catch((error) => console.error("Error deleting cat: ", error));
+            }
+        }
+
+        // --- NEW: Listener that watches for deletions in the database ---
+        database.ref('cats').on('child_removed', function(snapshot) {
+            let catId = snapshot.key;
+            
+            // If the deleted cat exists on our map, remove it!
+            if (catMarkers[catId]) {
+                map.removeLayer(catMarkers[catId]);
+                delete catMarkers[catId]; // Clean up our tracking dictionary
+            }
         });
 
         document.getElementById('cat-photo').addEventListener('change', function(e) {
