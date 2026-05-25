@@ -73,7 +73,7 @@
             height: 100%;
         }
 
-        /* --- UI BUTTONS ON MAP --- */
+        /* --- UI BUTTONS & OVERLAYS ON MAP --- */
         #locate-btn {
             position: absolute;
             top: 20px;
@@ -115,6 +115,26 @@
         #locate-btn:active, #add-btn:active {
             transform: translate(2px, 2px);
             box-shadow: 1px 1px 0px #000;
+        }
+
+        /* --- NEW: INSTRUCTION TOAST --- */
+        #instruction-toast {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #FFDE00;
+            color: #000;
+            padding: 12px 24px;
+            border: 3px solid #000;
+            border-radius: 30px;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 4px 4px 0px #000;
+            z-index: 1000;
+            pointer-events: none; /* Let clicks pass right through it */
+            white-space: nowrap;
         }
 
         .targeting-mode #map {
@@ -176,7 +196,7 @@
             resize: none;
         }
 
-        /* --- NEW: STAR RATING LAYOUT --- */
+        /* --- STAR RATING LAYOUT --- */
         .rating-group {
             display: flex;
             align-items: center;
@@ -256,6 +276,9 @@
 
     <div id="map-container">
         <div id="map"></div>
+        
+        <div id="instruction-toast" class="hidden">👇 Select the location on the map to cat-a-log!</div>
+        
         <button id="locate-btn" onclick="locateUser()">📍 Find Me</button>
         <button class="add-cat-btn" id="add-btn" onclick="togglePlacingCat()">+</button>
     </div>
@@ -336,17 +359,14 @@
         let pendingLat = null;
         let pendingLng = null;
 
-        // --- NEW: Dynamic Star Picker Logic ---
         document.querySelectorAll('.star-rating .star').forEach(star => {
             star.addEventListener('click', function() {
                 let value = parseInt(this.getAttribute('data-value'));
                 let container = this.parentElement;
                 let ratingType = container.getAttribute('data-type');
                 
-                // Save selection to hidden input field
                 document.getElementById(`rating-${ratingType}`).value = value;
                 
-                // Light up clicked star and all previous stars
                 let stars = container.querySelectorAll('.star');
                 stars.forEach(s => {
                     if (parseInt(s.getAttribute('data-value')) <= value) {
@@ -358,7 +378,6 @@
             });
         });
 
-        // --- NEW: Helper Function to render Popups Stars ---
         function renderStars(ratingValue) {
             let starsHTML = '';
             let rating = parseInt(ratingValue) || 0;
@@ -372,25 +391,32 @@
             return starsHTML;
         }
 
+        // --- UPDATED: Show the toast when placing a cat ---
         function togglePlacingCat() {
             let btn = document.getElementById('add-btn');
+            let toast = document.getElementById('instruction-toast');
             
             if (!isPlacingCat) {
                 isPlacingCat = true;
                 document.getElementById('map-container').classList.add('targeting-mode');
                 btn.innerHTML = '✖'; 
                 btn.style.backgroundColor = '#95A5A6'; 
+                toast.classList.remove('hidden'); // Reveal text box
             } else {
                 cancelPlacingCat();
             }
         }
 
+        // --- UPDATED: Hide the toast when canceled ---
         function cancelPlacingCat() {
             isPlacingCat = false;
             document.getElementById('map-container').classList.remove('targeting-mode');
             let btn = document.getElementById('add-btn');
+            let toast = document.getElementById('instruction-toast');
+            
             btn.innerHTML = '+';
             btn.style.backgroundColor = 'var(--coral)';
+            toast.classList.add('hidden'); // Hide text box
         }
 
         map.on('click', function(e) {
@@ -416,7 +442,6 @@
             document.getElementById('cat-photo').value = '';
             document.getElementById('photoData').value = ''; 
             
-            // Reset ratings form values and visual selections
             document.getElementById('rating-cuteness').value = '0';
             document.getElementById('rating-friendliness').value = '0';
             document.querySelectorAll('.star-rating .star').forEach(s => s.classList.remove('active'));
@@ -427,7 +452,6 @@
             let catNotes = document.getElementById('cat-notes').value || 'No notes.';
             let photoData = document.getElementById('photoData').value;
             
-            // Gather rating numbers
             let cutenessRating = document.getElementById('rating-cuteness').value;
             let friendlinessRating = document.getElementById('rating-friendliness').value;
             
@@ -453,7 +477,6 @@
             let marker = L.marker([catData.lat, catData.lng], {icon: catIcon}).addTo(map);
             catMarkers[catId] = marker;
 
-            // Updated HTML template to integrate the star rows nicely
             let popupHTML = `
                 <div style="text-align: center; font-family: 'Fredoka', sans-serif; min-width: 170px;">
                     <h3 style="margin: 0 0 5px 0; color: #00A896; font-size: 1.2rem;">${catData.name}</h3>
