@@ -176,10 +176,43 @@
             resize: none;
         }
 
+        /* --- NEW: STAR RATING LAYOUT --- */
+        .rating-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .rating-group label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 4px;
+        }
+
+        .star {
+            font-size: 1.8rem;
+            color: #DDD;
+            cursor: pointer;
+            transition: color 0.1s;
+            -webkit-text-stroke: 1px #000;
+            user-select: none;
+        }
+
+        .star.active {
+            color: #FFDE00;
+            text-shadow: 2px 2px 0px #000;
+        }
+
         .modal-buttons {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
+            margin-top: 15px;
         }
 
         .modal-buttons button {
@@ -232,6 +265,31 @@
         <h2>Spot a Cat? 🐈</h2>
         <div class="form-group"><input type="text" id="cat-name" placeholder="Cat's Name (or 'Unknown')"></div>
         <div class="form-group"><textarea id="cat-notes" placeholder="Color, markings, behavior..."></textarea></div>
+        
+        <div class="rating-group">
+            <label>Cuteness:</label>
+            <div class="star-rating" data-type="cuteness">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+            <input type="hidden" id="rating-cuteness" value="0">
+        </div>
+
+        <div class="rating-group">
+            <label>Friendliness:</label>
+            <div class="star-rating" data-type="friendliness">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+            <input type="hidden" id="rating-friendliness" value="0">
+        </div>
+
         <div class="form-group">
             <input type="file" id="cat-photo" accept="image/*">
             <input type="hidden" id="photoData">
@@ -261,13 +319,11 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Focused straight on the heart of the action
         var map = L.map('map', { zoomControl: false }).setView([33.767433, -84.333119], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Updated with your requested permanent icon URL!
         var catIcon = L.icon({
             iconUrl: 'https://i.ibb.co/9mCTPf4V/Chat-GPT-Image-May-24-2026-05-15-02-PM.png', 
             iconSize: [40, 40], 
@@ -279,6 +335,42 @@
         let isPlacingCat = false;
         let pendingLat = null;
         let pendingLng = null;
+
+        // --- NEW: Dynamic Star Picker Logic ---
+        document.querySelectorAll('.star-rating .star').forEach(star => {
+            star.addEventListener('click', function() {
+                let value = parseInt(this.getAttribute('data-value'));
+                let container = this.parentElement;
+                let ratingType = container.getAttribute('data-type');
+                
+                // Save selection to hidden input field
+                document.getElementById(`rating-${ratingType}`).value = value;
+                
+                // Light up clicked star and all previous stars
+                let stars = container.querySelectorAll('.star');
+                stars.forEach(s => {
+                    if (parseInt(s.getAttribute('data-value')) <= value) {
+                        s.classList.add('active');
+                    } else {
+                        s.classList.remove('active');
+                    }
+                });
+            });
+        });
+
+        // --- NEW: Helper Function to render Popups Stars ---
+        function renderStars(ratingValue) {
+            let starsHTML = '';
+            let rating = parseInt(ratingValue) || 0;
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    starsHTML += '<span style="color: #FFDE00; -webkit-text-stroke: 1px #000; text-shadow: 1px 1px 0px #000; font-size: 1.1rem; margin-right:1px;">★</span>';
+                } else {
+                    starsHTML += '<span style="color: #DDD; -webkit-text-stroke: 1px #000; font-size: 1.1rem; margin-right:1px;">★</span>';
+                }
+            }
+            return starsHTML;
+        }
 
         function togglePlacingCat() {
             let btn = document.getElementById('add-btn');
@@ -323,6 +415,11 @@
             document.getElementById('cat-notes').value = '';
             document.getElementById('cat-photo').value = '';
             document.getElementById('photoData').value = ''; 
+            
+            // Reset ratings form values and visual selections
+            document.getElementById('rating-cuteness').value = '0';
+            document.getElementById('rating-friendliness').value = '0';
+            document.querySelectorAll('.star-rating .star').forEach(s => s.classList.remove('active'));
         }
 
         function saveCatToDatabase() {
@@ -330,10 +427,16 @@
             let catNotes = document.getElementById('cat-notes').value || 'No notes.';
             let photoData = document.getElementById('photoData').value;
             
+            // Gather rating numbers
+            let cutenessRating = document.getElementById('rating-cuteness').value;
+            let friendlinessRating = document.getElementById('rating-friendliness').value;
+            
             let newCatData = {
                 name: catName,
                 notes: catNotes,
                 photo: photoData,
+                cuteness: cutenessRating,
+                friendliness: friendlinessRating,
                 lat: pendingLat || map.getCenter().lat, 
                 lng: pendingLng || map.getCenter().lng
             };
@@ -350,11 +453,20 @@
             let marker = L.marker([catData.lat, catData.lng], {icon: catIcon}).addTo(map);
             catMarkers[catId] = marker;
 
+            // Updated HTML template to integrate the star rows nicely
             let popupHTML = `
-                <div style="text-align: center; font-family: 'Fredoka', sans-serif; min-width: 160px;">
+                <div style="text-align: center; font-family: 'Fredoka', sans-serif; min-width: 170px;">
                     <h3 style="margin: 0 0 5px 0; color: #00A896; font-size: 1.2rem;">${catData.name}</h3>
                     ${catData.photo ? `<img src="${catData.photo}" style="width: 150px; border-radius: 8px; border: 2px solid #2F3E46; margin-bottom: 5px;">` : ''}
-                    <p style="margin: 5px 0; font-size: 0.9rem; color: #555;">${catData.notes}</p>
+                    
+                    <div style="margin: 3px 0; text-align: left; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                        <span>✨ Cuteness:</span> <span>${renderStars(catData.cuteness)}</span>
+                    </div>
+                    <div style="margin: 3px 0 6px 0; text-align: left; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                        <span>🤝 Friendly:</span> <span>${renderStars(catData.friendliness)}</span>
+                    </div>
+
+                    <p style="margin: 5px 0; font-size: 0.9rem; color: #555; text-align: center; border-top: 1px dashed #DDD; padding-top: 5px;">${catData.notes}</p>
                     <button class="delete-btn" onclick="deleteCat('${catId}')">🗑️ Remove Pin</button>
                 </div>
             `;
