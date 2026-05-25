@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* --- CORE LAYOUT & VARIABLES --- */
+        /* --- CORE LAYOUT --- */
         :root {
             --coral: #FF6B6B;
             --mint: #00A896;
@@ -60,7 +60,7 @@
             display: inline-block;
         }
 
-        /* --- MAP & CONTAINER --- */
+        /* --- MAP CONTAINER --- */
         #map-container { 
             flex-grow: 1;
             position: relative;
@@ -194,7 +194,7 @@
         .cancel-btn { background: #FF9F1C; color: white; }
         .save-btn { background: var(--mint); color: white; }
 
-        /* --- NEW: DELETE BUTTON STYLE --- */
+        /* --- POPUP DELETE BUTTON --- */
         .delete-btn {
             background-color: var(--coral);
             color: white;
@@ -261,21 +261,21 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        var map = L.map('map', { zoomControl: false }).setView([33.767433, -84.333119], 15);
+        // Focused straight on the heart of the action
+        var map = L.map('map', { zoomControl: false }).setView([33.767433, -84.333119], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
+        // Updated with your requested permanent icon URL!
         var catIcon = L.icon({
             iconUrl: 'https://i.ibb.co/9mCTPf4V/Chat-GPT-Image-May-24-2026-05-15-02-PM.png', 
-            iconSize: [35, 35], 
-            iconAnchor: [17, 35], 
-            popupAnchor: [0, -35] 
+            iconSize: [40, 40], 
+            iconAnchor: [20, 40], 
+            popupAnchor: [0, -40] 
         });
 
-        // --- NEW: Dictionary to keep track of marker layers by their Firebase ID ---
         let catMarkers = {};
-
         let isPlacingCat = false;
         let pendingLat = null;
         let pendingLng = null;
@@ -343,46 +343,37 @@
                 .catch((error) => console.error("Uh oh, something went wrong:", error));
         }
 
-        // --- UPDATED: Cloud Reader (Now captures the ID and saves the marker) ---
         database.ref('cats').on('child_added', function(snapshot) {
             let catData = snapshot.val(); 
-            let catId = snapshot.key; // The unique Firebase ID for this cat
+            let catId = snapshot.key; 
 
             let marker = L.marker([catData.lat, catData.lng], {icon: catIcon}).addTo(map);
-            
-            // Store the marker so we can easily delete it later
             catMarkers[catId] = marker;
 
-            // Notice the new <button> at the bottom of the HTML string!
             let popupHTML = `
-                <div style="text-align: center; font-family: 'Fredoka', sans-serif;">
-                    <h3 style="margin: 0 0 5px 0; color: #00A896;">${catData.name}</h3>
-                    ${catData.photo ? `<img src="${catData.photo}" style="width: 150px; border-radius: 8px; border: 2px solid #2F3E46;">` : ''}
-                    <p style="margin: 5px 0 0 0;">${catData.notes}</p>
-                    <button class="delete-btn" onclick="deleteCat('${catId}')">🗑️ Remove</button>
+                <div style="text-align: center; font-family: 'Fredoka', sans-serif; min-width: 160px;">
+                    <h3 style="margin: 0 0 5px 0; color: #00A896; font-size: 1.2rem;">${catData.name}</h3>
+                    ${catData.photo ? `<img src="${catData.photo}" style="width: 150px; border-radius: 8px; border: 2px solid #2F3E46; margin-bottom: 5px;">` : ''}
+                    <p style="margin: 5px 0; font-size: 0.9rem; color: #555;">${catData.notes}</p>
+                    <button class="delete-btn" onclick="deleteCat('${catId}')">🗑️ Remove Pin</button>
                 </div>
             `;
 
             marker.bindPopup(popupHTML);
         });
 
-        // --- NEW: Function to delete a cat from Firebase ---
         function deleteCat(catId) {
-            // Ask for confirmation before deleting
-            if(confirm("Are you sure you want to remove this cat?")) {
+            if(confirm("Are you sure you want to remove this cat alignment?")) {
                 database.ref('cats/' + catId).remove()
                     .catch((error) => console.error("Error deleting cat: ", error));
             }
         }
 
-        // --- NEW: Listener that watches for deletions in the database ---
         database.ref('cats').on('child_removed', function(snapshot) {
             let catId = snapshot.key;
-            
-            // If the deleted cat exists on our map, remove it!
             if (catMarkers[catId]) {
                 map.removeLayer(catMarkers[catId]);
-                delete catMarkers[catId]; // Clean up our tracking dictionary
+                delete catMarkers[catId];
             }
         });
 
